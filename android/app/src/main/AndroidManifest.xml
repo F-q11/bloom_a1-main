@@ -10,7 +10,11 @@
     <!-- Required for notification vibration -->
     <uses-permission android:name="android.permission.VIBRATE"/>
 
-
+    <!-- Required for alarm to read the schedule -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <!-- إذن الميكروفون -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>

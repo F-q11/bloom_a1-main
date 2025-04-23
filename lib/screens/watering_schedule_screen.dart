@@ -17,13 +17,21 @@ class WateringScheduleScreen extends StatefulWidget {
 class _WateringScheduleScreenState extends State<WateringScheduleScreen> {
   final PlantController _plantController = Get.find();
   final WateringScheduleController _sController =
-      Get.put(WateringScheduleController());
+  Get.put(WateringScheduleController());
 
   int _selectedPlantIndex = 0;
   List<String> _plantNames = [];
 
   Map<String, DateTime> lastWatered = {};
   Map<String, List<DateTime>> wateringSchedule = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize TTS and Notification services
+    MultiUseClasses.ttsServices.init();
+    MultiUseClasses.notificationServices.init();
+  }
 
   void _setLastWatered(DateTime date) {
     String plant = _plantNames[_selectedPlantIndex];
@@ -38,6 +46,7 @@ class _WateringScheduleScreenState extends State<WateringScheduleScreen> {
     DateTime startDate = lastWatered[plant] ?? DateTime.now();
     List<DateTime> schedule = [];
     int waterDay = 0;
+
     //get number of watering based the current season
     if (_plantController.currentSeason.value == "الشتاء") {
       waterDay = (30 / double.parse(plantSchedule.winter)).round();
@@ -45,12 +54,13 @@ class _WateringScheduleScreenState extends State<WateringScheduleScreen> {
     if (_plantController.currentSeason.value == "الصيف") {
       waterDay = (30 / double.parse(plantSchedule.summer)).round();
     }
+
     for (int i = 1; i <= 30; i += waterDay) {
       schedule.add(startDate.add(Duration(days: i)));
     }
     wateringSchedule[plant] = schedule;
+
     //update or insert to watering_schedule table
-    // delete all schedules of this plant and update the
     if (_sController.wateringSchedules.isNotEmpty) {
       await _sController.deleteSchedule(plantSchedule.id!);
     }
@@ -61,7 +71,27 @@ class _WateringScheduleScreenState extends State<WateringScheduleScreen> {
         frequency: waterDay.toString(),
         day: schedule[i].day.toString(),
       ));
+
+      // Schedule notification for each watering day
+      await _scheduleWateringNotification(
+        plantName: plant,
+        date: schedule[i],
+      );
     }
+  }
+
+  Future<void> _scheduleWateringNotification({
+    required String plantName,
+    required DateTime date,
+  }) async {
+    final notificationId = date.hashCode; // Unique ID based on date
+
+    await MultiUseClasses.notificationServices.scheduleNotification(
+      id: notificationId,
+      title: "موعد ري النبات",
+      body: "حان وقت ري نبات $plantName اليوم",
+      scheduledTime: DateTime.now().add(Duration(seconds: 5)), // Test after 10 seconds
+    );
   }
 
   @override
@@ -199,7 +229,7 @@ class _WateringScheduleScreenState extends State<WateringScheduleScreen> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                        const Color(0xFF204D32), // استخدام اللون المطلوب
+                    const Color(0xFF204D32), // استخدام اللون المطلوب
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                         vertical: 12, horizontal: 20),
@@ -227,39 +257,6 @@ class _WateringScheduleScreenState extends State<WateringScheduleScreen> {
                     child: _buildCalendar(),
                   ),
                 ),
-
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                    const Color(0xFF204D32), // استخدام اللون المطلوب
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  onPressed: () async {
-
-                    MultiUseClasses.ttsServices.speak(
-                      'مرحبًا بك في بلوم اسست',
-                    );
-
-                    MultiUseClasses.notificationServices.scheduleNotification(
-                      minute: 41,
-                      hour: 10,
-                      day: 23,
-                      month: 4,
-                      year: 2025,
-                      title: "مرحبًا بك في بلوم اسست",
-                      body: "مرحبًا بك في بلوم اسست",
-                    );
-                  },
-                  child: const Text("تحديد تاريخ الاشعار"),
-                ),
-                const SizedBox(height: 200),
-
-
               ],
             );
           }),
@@ -322,7 +319,7 @@ class _WateringScheduleScreenState extends State<WateringScheduleScreen> {
                 itemBuilder: (context, index) {
                   final day = daysInMonth[index];
                   final isWateringDay =
-                      schedules.any((s) => int.tryParse(s.day) == day);
+                  schedules.any((s) => int.tryParse(s.day) == day);
 
                   return Container(
                     decoration: BoxDecoration(

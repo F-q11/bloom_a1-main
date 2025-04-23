@@ -1,18 +1,26 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
+import '../models/ScheduledNotification.dart';
+import '../multi_use_classes.dart';
+import '../screens/watering_schedule_screen.dart';
+
 class NotificationService extends GetxService{
   final notificationPlugin = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
+  late Box<ScheduledNotification> _notificationBox;
 
 
   //Initialize
   Future<NotificationService> init() async {
     if (_isInitialized) return this; //prevent reinitialization
 
+// Initialize Hive box
+    _notificationBox = Hive.box<ScheduledNotification>('notifications');
     //init timezone handling
     tz.initializeTimeZones();
     final currentTimeZone = await FlutterTimezone.getLocalTimezone();
@@ -46,11 +54,37 @@ class NotificationService extends GetxService{
     );
 
     //initialize the plugin
-    await notificationPlugin.initialize(initSettings);
+    await notificationPlugin.initialize(initSettings
+    ,onDidReceiveNotificationResponse: (NotificationResponse response) {
+        _onNotificationClicked(response);
+      },
+    );
     _isInitialized = true;
     return this;
   }
 
+  void _onNotificationClicked(NotificationResponse response) {
+    // Handle notification click
+    print("Onclick");
+    final notification = _notificationBox.get(response.id);
+    if (notification != null) {
+      // Speak the notification content
+      MultiUseClasses.ttsServices.speak(
+          "${notification.title}. ${notification.body}"
+      );
+
+      // You can add additional actions here:
+      // - Navigate to specific screen
+      // - Perform specific action
+      // - Show dialog
+
+      // Example: Navigate to watering schedule screen
+      Get.to(() => WateringScheduleScreen());
+
+      // Remove the notification from storage
+      _notificationBox.delete(response.id);
+    }
+  }
   //Notifications Details Setup
   NotificationDetails _notificationDetails() {
     return const NotificationDetails(
@@ -65,58 +99,32 @@ class NotificationService extends GetxService{
     );
   }
 
-  //Show Notification
-  Future<void> showNotification({
-    int id = 0,
-    String? title,
-    String? body,
-  }) async {
-    return await notificationPlugin.show(
-      id,
-      title,
-      body,
-      _notificationDetails(),
-    );
-  }
-
-/*
-
-  Schedule a Notification at specified time
-
-  - hour (0-23)
-  - minute (0-59)
-
-*/
 
   Future<void> scheduleNotification({
     int id = 1,
     String? title,
     String? body,
-    required int year,
-    required int month,
-    required int day,
-    required int hour,
-    required int minute,
+    required DateTime scheduledTime,
   }) async {
+    // Save to local storage
+    final notification = ScheduledNotification(
+      id: id,
+      title: title!,
+      body: body!,
+      scheduledTime: scheduledTime,
+    );
+    await _notificationBox.put(id, notification);
+
     //get current date and time
     final now = tz.TZDateTime.now(tz.local);
 
-    //create a date/time for today at the specified hout/min
-    var scheduleDate = tz.TZDateTime(
-      tz.local,
-      year,
-      month,
-      day,
-      hour,
-      minute,
-    );
 
     //schedule the notification
     await notificationPlugin.zonedSchedule(
       id,
       title,
       body,
-      scheduleDate,
+      tz.TZDateTime.from(scheduledTime, tz.local),
       _notificationDetails(),
       //Ios specific: Use exact time specified (vs relative time)
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
@@ -125,8 +133,11 @@ class NotificationService extends GetxService{
 
       //make the notification repeat daily at the same time
       matchDateTimeComponents: DateTimeComponents.time,
+      payload: id.toString(), // Important for identification
     );
   }
+
+
 
   //Cancel All Notification
   Future<void> cancelAllNotification() async {

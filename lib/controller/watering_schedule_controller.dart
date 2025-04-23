@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../models/watering_schedule_table.dart';
 import '../services/db_helper.dart';
+import 'package:bloom_a1/multi_use_classes.dart';
 
 class WateringScheduleController extends GetxController {
   final DBHelper _dbHelper = DBHelper();
@@ -33,5 +34,7 @@ class WateringScheduleController extends GetxController {
   Future<void> deleteSchedule(int plantId) async {
     await _dbHelper.deleteSchedule(plantId);
     await loadSchedules(plantId);
+    // Cancel all notifications for this plant
+    await MultiUseClasses.notificationServices.cancelAllNotification();
   }
 }
