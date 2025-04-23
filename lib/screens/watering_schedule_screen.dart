@@ -1,4 +1,5 @@
 import 'package:bloom_a1/controller/plant_controller.dart';
+import 'package:bloom_a1/multi_use_classes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/auth_controller.dart';
@@ -226,6 +227,39 @@ class _WateringScheduleScreenState extends State<WateringScheduleScreen> {
                     child: _buildCalendar(),
                   ),
                 ),
+
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                    const Color(0xFF204D32), // استخدام اللون المطلوب
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  onPressed: () async {
+
+                    MultiUseClasses.ttsServices.speak(
+                      'مرحبًا بك في بلوم اسست',
+                    );
+
+                    MultiUseClasses.notificationServices.scheduleNotification(
+                      minute: 41,
+                      hour: 10,
+                      day: 23,
+                      month: 4,
+                      year: 2025,
+                      title: "مرحبًا بك في بلوم اسست",
+                      body: "مرحبًا بك في بلوم اسست",
+                    );
+                  },
+                  child: const Text("تحديد تاريخ الاشعار"),
+                ),
+                const SizedBox(height: 200),
+
+
               ],
             );
           }),
