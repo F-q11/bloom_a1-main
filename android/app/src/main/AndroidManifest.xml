@@ -41,6 +41,12 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
+
+        <receiver
+        android:name=".AlarmReceiver"
+        android:exported="true" />
+    
+
         <!-- ============= ADD THESE RECEIVERS ============= -->
         <!-- Handles showing scheduled notifications -->
         <receiver

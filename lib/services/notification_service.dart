@@ -126,8 +126,7 @@ class NotificationService extends GetxService{
       body,
       tz.TZDateTime.from(scheduledTime, tz.local),
       _notificationDetails(),
-      //Ios specific: Use exact time specified (vs relative time)
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+    
       //Android specific: Allow notification while device is in low-power mode
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
 

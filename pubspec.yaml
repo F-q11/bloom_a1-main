@@ -37,7 +37,10 @@ dependencies:
 
   #================================================================
   #Send local notifications
-  flutter_local_notifications: ^18.0.1
+  # flutter_local_notifications: ^18.0.1
+  flutter_local_notifications: ^19.1.0
+  permission_handler: ^11.0.0
+
   timezone: ^0.10.0
   flutter_timezone: ^4.1.0
   #alarm
